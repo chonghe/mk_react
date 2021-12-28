@@ -1,86 +1,86 @@
-import React, { Component, Fragment } from "react";
-import TodoItem from "./TodoItem";
-import "./style.css";
+import React, { Component } from "react";
+import "antd/dist/antd.css";
+import { connect } from "react-redux";
 
-export default class TodoList extends Component {
-  constructor(props) {
+import store from "./store";
+import {
+  getInputChangeAction,
+  getAddItemAction,
+  getDeleteItemAction,
+  getTodoList,
+} from "./store/actionCreator";
+import { Input, Button, List } from "antd";
+
+class TodoList extends Component {
+  /* constructor(props) {
     super(props);
-    //4-3 当组件的state或者props发生改变的时候，render函数就会重新执行
-    this.state = {
-      inputValue: "",
-      list: [],
-    };
+    this.state = store.getState();
+    //console.log(store.getState());
+    //store.subscribe(this.handleStoreChange);
+  } */
+
+  componentDidMount() {
+    const action = getTodoList();
+    store.dispatch(action);
   }
   render() {
-    const { inputValue } = this.state;
     return (
-      <Fragment>
-        <h1>TodoList</h1>
+      <div style={{ marginLeft: "10px", marginTop: "10px" }}>
         <div>
-          <label htmlFor="search">content:</label>
-          <input
-            className="input"
-            type="text"
-            value={inputValue}
-            onChange={this.handleInputChange}
-            id="search"
-            // ref={(input) => {
-            //   this.input = input;
-            // }}
-          />
-          {/* ref是一个叫做this.input的引用，它指向的是input框对应的dom节点 */}
-          <button onClick={this.handleBtnClick}>Search</button>
+          <Input
+            placeholder="input item"
+            style={{ width: "300px", marginRight: "10px" }}
+            value={this.props.inputValue}
+            onChange={this.props.handleInputChange}
+          ></Input>
+          <Button type="primary" onClick={this.props.handleBtnClick}>
+            Submit
+          </Button>
         </div>
-        <ul>{this.getTodoList()}</ul>
-      </Fragment>
+        <List
+          style={{ width: "300px", marginTop: "10px" }}
+          bordered
+          dataSource={this.props.list}
+          renderItem={(item, index) => (
+            <List.Item onClick={() => this.props.handleItemDelete(index)}>
+              {item}
+            </List.Item>
+          )}
+        />
+      </div>
     );
   }
-  getTodoList = () => {
-    const { list } = this.state;
-    return list.map((item, index) => {
-      return (
-        <TodoItem
-          key={index}
-          item={item}
-          index={index}
-          handleItemDelete={this.handleItemDelete}
-        />
-      );
-    });
-  };
-  handleInputChange = (e) => {
-    // 4-7 ref使用,不建议使用ref，因为它是在直接实际操作dom
-    // const value = this.input.value;
-    // 防止报错在setState的函数写法
-    const value = e.target.value;
-    // 省去return写法
-    this.setState(() => ({
-      inputValue: value,
-    }));
-    // this.setState(() => {
-    //   return { inputValue: value };
-    // });
-  };
-
-  handleBtnClick = () => {
-    // const newList = [this.state.inputValue, ...this.state.list];
-    this.setState(
-      (preState) => ({
-        // 可接收一个preState,代替this.state
-        list: [preState.inputValue, ...preState.list],
-        inputValue: "",
-      })
-      // 4-7 setState是异步，如果想获得setState更新后的数据，需要添加第二个参数，这是一个回调函数
-      // ,()=>{console.log(list);}
-    );
-  };
-  handleItemDelete = (index) => {
-    this.setState((preState) => {
-      const list = [...preState.list];
-      list.splice(index, 1);
-      return {
-        list,
-      };
-    });
-  };
+  // handleStoreChange = () => {
+  //   this.setState(store.getState());
+  // };
 }
+// 接收store中的state，然后return一个对象.
+// store中的state映射到组件中的props
+const mapStateToProps = (state) => {
+  return {
+    inputValue: state.inputValue,
+    list: state.list,
+  };
+};
+// store.dispatch映射到props
+const mapDispatchToProps = (dispatch) => {
+  return {
+    handleInputChange(e) {
+      const action = getInputChangeAction(e.target.value);
+      dispatch(action);
+      //console.log(e.target.value);
+    },
+
+    handleBtnClick() {
+      const action = getAddItemAction();
+      dispatch(action);
+    },
+    handleItemDelete(index) {
+      // console.log(index);
+      const action = getDeleteItemAction(index);
+      dispatch(action);
+    },
+  };
+};
+// 让组件和store做连接，规则
+export default connect(mapStateToProps, mapDispatchToProps)(TodoList);
